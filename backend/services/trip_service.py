@@ -1,5 +1,4 @@
 
-
 def show_destiation(destination_list):
     destination_summary = ''
     no = 1
