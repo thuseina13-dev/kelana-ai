@@ -1,4 +1,5 @@
 
+from services.bedrock_services import get_bedrock_recommendation
 from database import init_db
 from fastapi import HTTPException
 from database import SessionLocal
@@ -8,6 +9,7 @@ from services.trip_service import (
     get_trip_category
 )
 from fastapi import FastAPI
+import os
 
 init_db()
 
@@ -58,9 +60,9 @@ def post_trips(request: TripRequest):
         days = request.days,
         budget = request.budget,
         category = category,
-        daily_budget = daily_budget
+        daily_budget = daily_budget,
     )
-    
+
     db = SessionLocal()
     db.add(trip)
     db.commit()
@@ -68,6 +70,51 @@ def post_trips(request: TripRequest):
     db.close()
 
     return trip
+
+@app.post('/api/v1/trips')
+def post_trips(request: TripRequest):
+    budget = request.budget
+    days = request.days
+    category = get_trip_category(budget)
+    daily_budget = calculate_daily_budget(budget, days)
+ 
+    trip = TripModel(
+        destination = request.destination,
+        days = request.days,
+        budget = request.budget,
+        category = category,
+        daily_budget = daily_budget,
+    )
+
+    db = SessionLocal()
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    db.close()
+
+    return trip
+
+@app.post('/api/v1/trips/{trip_id}/generate')
+def regenerate_ai_recommendation(trip_id: int):
+    db = SessionLocal()
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+    if (trip is None):
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+
+    ai_recommendation_result = get_bedrock_recommendation(trip.days, trip.destination, trip.budget, trip.category)
+
+    trip.ai_recommendation = ai_recommendation_result
+
+    db.commit()
+    db.refresh(trip)
+    db.close()
+
+    return {
+        "trip_id": trip.id,
+        "destination": trip.destination,
+        "recommendation": trip.ai_recommendation
+    }
 
 @app.get('/api/v1/trips')
 def get_trip():
