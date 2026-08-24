@@ -29,39 +29,45 @@ def get_bedrock_recommendation(days, destination, budget, category) -> str:
 
         CRITICAL FORMATTING INSTRUCTIONS:
         - Output strictly valid Markdown.
-        - Return ONLY the itinerary content. Do NOT include greetings, intro, or outro (e.g. "Sure, here is your plan").
-        - Do NOT use 4-space indentation for regular text (to avoid unwanted code blocks).
+        - Use EXACTLY the following section headers (starting with ##) so the response can be easily parsed and displayed in separate sections:
 
-        Sample Structure:
+        ## DAY 1: [Short Title]
+        - Morning:
+          - [Activities with estimated cost]
+        - Afternoon:
+          - [Activities with estimated cost]
+        - Evening:
+          - [Activities with estimated cost]
 
-        Day [number]
-            Morning:
-                - [Activities]
-            Afternoon:
-                - [Activities]
-            Evening:
-                - [Activities]
-        
-        Budget Summary
-            [estimated total budget include accommodation, transportation, food, activities, total]
+        ## DAY [number]: [Short Title]
+        (Repeat for each day up to Day {days})
 
-        notes:  
-         1. Each day must be give recommendation local food and transportation
-         2. in morning give 2 - 3 morning activies
-         3. In afternoon give recommendtion for cultur sites and local exeperiment
-         4. In evening give dinner sports and nightlife 
-         5. each ativites give price estimate 
+        ## TRAVEL TIPS
+        - [Provide 3-5 practical travel tips, local etiquette, transportation advice, and best times to visit]
 
+        ## LOCAL FOOD RECOMMENDATION
+        - [Provide 3-5 must-try local dishes, famous eateries, and price ranges]
+
+        ## BUDGET BREAKDOWN
+        - Accommodation: $[Amount]
+        - Transportation: $[Amount]
+        - Food: $[Amount]
+        - Activities: $[Amount]
+        - Estimated Total: $[Amount]
+
+        Additional Notes:
+        1. Return ONLY the itinerary content with the exact section headers above. Do NOT include intro or outro text.
+        2. Ensure every activity and food item includes an estimated cost in USD.
     """).strip()
 
     ai_request = client.converse(
-        modelId= os.getenv("MODEL_ID"),
+        modelId=os.getenv("MODEL_ID"),
         messages=[
             {
                 "role": "user",
                 "content": [
                     {
-                        "text" : prompt
+                        "text": prompt
                     }
                 ]
             }
@@ -70,3 +76,4 @@ def get_bedrock_recommendation(days, destination, budget, category) -> str:
     
     ai_response = ai_request["output"]["message"]["content"][0]["text"]
     return ai_response
+

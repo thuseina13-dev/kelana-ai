@@ -9,11 +9,21 @@ from services.trip_service import (
     get_trip_category
 )
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 init_db()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get('/')
 def home():
     return {"message": "Welcome to Kelana AI"}
@@ -71,28 +81,6 @@ def post_trips(request: TripRequest):
 
     return trip
 
-@app.post('/api/v1/trips')
-def post_trips(request: TripRequest):
-    budget = request.budget
-    days = request.days
-    category = get_trip_category(budget)
-    daily_budget = calculate_daily_budget(budget, days)
- 
-    trip = TripModel(
-        destination = request.destination,
-        days = request.days,
-        budget = request.budget,
-        category = category,
-        daily_budget = daily_budget,
-    )
-
-    db = SessionLocal()
-    db.add(trip)
-    db.commit()
-    db.refresh(trip)
-    db.close()
-
-    return trip
 
 @app.post('/api/v1/trips/{trip_id}/generate')
 def regenerate_ai_recommendation(trip_id: int):
