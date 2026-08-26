@@ -18,7 +18,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[os.getenv('FRONTEND_URL')],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,14 +62,13 @@ def get_health():
 def post_trips(request: TripRequest):
     budget = request.budget
     days = request.days
-    category = get_trip_category(budget)
     daily_budget = calculate_daily_budget(budget, days)
 
     trip = TripModel(
         destination = request.destination,
         days = request.days,
         budget = request.budget,
-        category = category,
+        category = request.travel_style,
         daily_budget = daily_budget,
     )
 
