@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getTrips, TripResponse } from '@/services/tripService';
+import { TripCard } from '../../componets/tripDetailComponent';
 
 export default function TripsHistoryPage() {
   const router = useRouter();
@@ -14,6 +15,15 @@ export default function TripsHistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('latest');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Reset pagination on filter or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
     const fetchTripsHistory = async () => {
@@ -41,9 +51,15 @@ export default function TripsHistoryPage() {
   const filteredAndSortedTrips = trips
     .filter((trip) => {
       const matchesDestination = trip.destination.toLowerCase().includes(searchQuery.toLowerCase());
+      const catLower = trip.category?.toLowerCase() || '';
+      const selectedLower = selectedCategory.toLowerCase();
+
       const matchesCategory =
         selectedCategory === '' ||
-        trip.category?.toLowerCase() === selectedCategory.toLowerCase();
+        catLower === selectedLower ||
+        (selectedLower === 'solo' && catLower === 'backpacker') ||
+        (selectedLower === 'couple' && catLower === 'luxury');
+
       return matchesDestination && matchesCategory;
     })
     .sort((a, b) => {
@@ -62,6 +78,12 @@ export default function TripsHistoryPage() {
       }
       return 0;
     });
+
+  // Paginated Items
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTrips = filteredAndSortedTrips.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAndSortedTrips.length / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
@@ -145,9 +167,9 @@ export default function TripsHistoryPage() {
                 className="w-full pl-10 pr-10 py-3 bg-emerald-50/20 border border-emerald-200/60 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-base sm:text-sm appearance-none cursor-pointer"
               >
                 <option value="">Semua Gaya (Travel Style)</option>
-                <option value="luxury">Luxury (Mewah)</option>
+                <option value="solo">Solo (Sendiri)</option>
+                <option value="couple">Couple (Pasangan)</option>
                 <option value="family">Family (Keluarga)</option>
-                <option value="backpacker">Backpacker (Hemat)</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-emerald-600">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,46 +266,58 @@ export default function TripsHistoryPage() {
           </div>
         ) : (
           /* Trips list grid */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAndSortedTrips.map((trip) => (
-              <div
-                key={trip.id}
-                onClick={() => router.push(`/trips/${trip.id}`)}
-                className="bg-white hover:bg-emerald-50/10 rounded-3xl border border-emerald-100 hover:border-emerald-300 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between group"
-              >
-                <div className="p-6 space-y-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">Destinasi</span>
-                      <h3 className="text-lg font-extrabold text-emerald-950 capitalize group-hover:text-emerald-600 transition-colors">
-                        {trip.destination}
-                      </h3>
-                    </div>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-950 border border-emerald-200/60 shadow-3xs capitalize">
-                      {trip.category || 'Standard'}
-                    </span>
-                  </div>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentTrips.map((trip, index) => (
+                <TripCard
+                  key={`${trip.id}-${index}`}
+                  trip={trip}
+                  onClick={() => router.push(`/trips/${trip.id}`)}
+                />
+              ))}
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-xs font-medium text-slate-500 pt-2">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="text-base">🗓️</span>
-                      <span>{trip.days} Hari</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <span className="text-base">💰</span>
-                      <span>${trip.budget.toLocaleString()} USD</span>
-                    </div>
-                  </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2 mt-8 pt-4 border-t border-emerald-100">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border border-emerald-200 text-emerald-800 rounded-xl hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-xs sm:text-sm flex items-center gap-1 shadow-2xs"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Sebelumnya
+                </button>
+
+                <div className="flex items-center space-x-1.5">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 rounded-xl text-xs sm:text-sm font-bold border transition-all ${currentPage === page
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/20'
+                        : 'bg-white border-emerald-200 text-emerald-800 hover:bg-emerald-50'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="px-6 py-4 bg-gradient-to-b from-white to-emerald-50/30 border-t border-emerald-50 flex items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-800">
-                  <span>Lihat Selengkapnya</span>
-                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border border-emerald-200 text-emerald-800 rounded-xl hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-xs sm:text-sm flex items-center gap-1 shadow-2xs"
+                >
+                  Berikutnya
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                   </svg>
-                </div>
+                </button>
               </div>
-            ))}
+            )}
           </div>
         )}
 

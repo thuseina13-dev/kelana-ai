@@ -10,7 +10,7 @@ export default function Home() {
     destination: '',
     budget: '',
     days: '',
-    travelStyle: 'luxury',
+    travelStyle: 'solo',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -229,9 +229,9 @@ export default function Home() {
                   onChange={handleChange}
                   className="w-full pl-10 pr-10 py-3 bg-emerald-50/40 border border-emerald-200/90 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-base sm:text-sm appearance-none cursor-pointer"
                 >
-                  <option value="luxury">Luxury (Mewah & Nyaman)</option>
+                  <option value="solo">Solo (Sendiri & Eksploratif)</option>
+                  <option value="couple">Couple (Pasangan & Romantis)</option>
                   <option value="family">Family (Keluarga & Santai)</option>
-                  <option value="backpacker">Backpacker (Hemat & Eksploratif)</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-emerald-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

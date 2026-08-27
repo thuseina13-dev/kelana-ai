@@ -125,6 +125,7 @@ export default function TripDetailPage() {
                             destination={trip.destination}
                             budget={trip.budget}
                             recommendation={trip.ai_recommendation}
+                            category={trip.category}
                         />
                     </div>
                 ) : (
