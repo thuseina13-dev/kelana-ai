@@ -5,10 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from database import SessionLocal
 from models.trip import TripRequest, TripModel
 from models.user import UserModel, UserRequest, LoginRequest
-from services.trip_service import (
-    calculate_daily_budget,
-    get_trip_category
-)
+from services.trip_service import calculate_daily_budget
 from services.auth_services import register_new_user, authenticate_user, verify_token
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -74,6 +71,7 @@ def post_trips(request: TripRequest, current_user: dict = Depends(get_current_us
     budget = request.budget
     days = request.days
     daily_budget = calculate_daily_budget(budget, days)
+    user_id = int(current_user["sub"])
 
     trip = TripModel(
         destination = request.destination,
@@ -81,7 +79,7 @@ def post_trips(request: TripRequest, current_user: dict = Depends(get_current_us
         budget = request.budget,
         category = request.travel_style,
         daily_budget = daily_budget,
-        user_id = request.user_id
+        user_id = user_id
     )
 
     db = SessionLocal()
@@ -101,6 +99,11 @@ def regenerate_ai_recommendation(trip_id: int, current_user: dict = Depends(get_
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
 
+    user_id = int(current_user["sub"])
+    if trip.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot modify another user's trip")
+
     ai_recommendation_result = get_bedrock_recommendation(trip.days, trip.destination, trip.budget, trip.category)
 
     trip.ai_recommendation = ai_recommendation_result
@@ -118,7 +121,8 @@ def regenerate_ai_recommendation(trip_id: int, current_user: dict = Depends(get_
 @app.get('/api/v1/trips')
 def get_trip(current_user: dict = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(TripModel).all()
+    user_id = int(current_user["sub"])
+    trip = db.query(TripModel).filter(TripModel.user_id == user_id).all()
     db.close()
     return trip
 
@@ -129,6 +133,10 @@ def get_trip_by_id(trip_id: int, current_user: dict = Depends(get_current_user))
     db.close()
     if (trip is None):
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+
+    user_id = int(current_user["sub"])
+    if trip.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot view another user's trip")
 
     return trip
 
@@ -141,6 +149,11 @@ def delete_trip_by_id(trip_id: int, current_user: dict = Depends(get_current_use
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
     
+    user_id = int(current_user["sub"])
+    if trip.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot delete another user's trip")
+
     db.delete(trip)
     db.commit()
     db.close()
@@ -150,7 +163,6 @@ def delete_trip_by_id(trip_id: int, current_user: dict = Depends(get_current_use
 def update_trip_by_id(trip_id: int, request: TripRequest, current_user: dict = Depends(get_current_user)):
     budget = request.budget
     days = request.days
-    category = get_trip_category(budget)
     daily_budget = calculate_daily_budget(budget, days)
     
     db = SessionLocal()
@@ -159,11 +171,17 @@ def update_trip_by_id(trip_id: int, request: TripRequest, current_user: dict = D
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
 
+    user_id = int(current_user["sub"])
+    if trip.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot modify another user's trip")
+
     trip.destination = request.destination
     trip.days = request.days
     trip.budget = request.budget
-    trip.category = category
+    trip.category = request.travel_style
     trip.daily_budget = daily_budget
+    trip.user_id = user_id
     
     db.commit()
     db.refresh(trip)

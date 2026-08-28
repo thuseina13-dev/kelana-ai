@@ -74,11 +74,6 @@ export default function TripsHistoryPage() {
   // Filter & Sort logic on the client side
   const filteredAndSortedTrips = trips
     .filter((trip) => {
-      // Filter by user_id
-      if (userId !== null && trip.user_id !== userId) {
-        return false;
-      }
-
       const matchesDestination = trip.destination.toLowerCase().includes(searchQuery.toLowerCase());
       const catLower = trip.category?.toLowerCase() || '';
       const selectedLower = selectedCategory.toLowerCase();
