@@ -5,7 +5,9 @@ export interface TripPayload {
   days: number;
   budget: number;
   travel_style: string;
+  user_id: number;
 }
+
 
 export interface TripResponse {
   id: number;
@@ -16,7 +18,9 @@ export interface TripResponse {
   daily_budget: number;
   ai_recommendation?: string;
   createdAt?: string;
+  user_id?: number;
 }
+
 
 export interface RecommendationResponse {
   trip_id: number;
@@ -24,9 +28,22 @@ export interface RecommendationResponse {
   recommendation: string;
 }
 
+const getHeaders = (extra: Record<string, string> = {}) => {
+  const headers: Record<string, string> = { ...extra };
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+};
+
 export const getTrips = async (): Promise<TripResponse[]> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/trips`);
+    const response = await fetch(`${BACKEND_URL}/api/v1/trips`, {
+      headers: getHeaders(),
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch trips (Status: ${response.status})`);
     }
@@ -41,9 +58,9 @@ export const createTrips = async (payload: TripPayload): Promise<TripResponse> =
   try {
     const response = await fetch(`${BACKEND_URL}/api/v1/trips`, {
       method: 'POST',
-      headers: {
+      headers: getHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
@@ -58,7 +75,9 @@ export const createTrips = async (payload: TripPayload): Promise<TripResponse> =
 
 export const getTripById = async (id: string | number): Promise<TripResponse> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/trips/${id}`);
+    const response = await fetch(`${BACKEND_URL}/api/v1/trips/${id}`, {
+      headers: getHeaders(),
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch trip (Status: ${response.status})`);
     }
@@ -73,6 +92,7 @@ export const generateTripRecommendation = async (tripId: number): Promise<Recomm
   try {
     const response = await fetch(`${BACKEND_URL}/api/v1/trips/${tripId}/generate`, {
       method: 'POST',
+      headers: getHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Gagal memproses rekomendasi AI (Status: ${response.status})`);
