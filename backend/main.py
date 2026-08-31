@@ -1,3 +1,5 @@
+from services.kb_service import retrieve_and_generate
+from services.kb_service import AskRequest
 from services.bedrock_services import get_bedrock_recommendation
 from database import init_db
 from fastapi import FastAPI, HTTPException, Depends
@@ -140,7 +142,6 @@ def get_trip_by_id(trip_id: int, current_user: dict = Depends(get_current_user))
 
     return trip
 
-
 @app.delete('/api/v1/trips/{trip_id}')
 def delete_trip_by_id(trip_id: int, current_user: dict = Depends(get_current_user)):
     db = SessionLocal()
@@ -189,7 +190,6 @@ def update_trip_by_id(trip_id: int, request: TripRequest, current_user: dict = D
 
     return trip
 
-
 @app.post('/api/v1/auth/register')
 def register_user(request: UserRequest):
     db = SessionLocal()
@@ -205,7 +205,6 @@ def register_user(request: UserRequest):
         "createdAt": new_user.createdAt
     }
 
-
 @app.post('/api/v1/auth/login')
 def login_user(request: LoginRequest):
     db = SessionLocal()
@@ -220,7 +219,6 @@ def login_user(request: LoginRequest):
         "access_token": token,
         "token_type": "bearer",
     }
-
 
 @app.get('/api/v1/auth/me')
 def get_me(current_user: dict = Depends(get_current_user)):
@@ -241,6 +239,24 @@ def get_me(current_user: dict = Depends(get_current_user)):
         "total_trip_generated": total_trips
     }
 
+@app.post('/api/v1/ask')
+def ask_kb(request: AskRequest, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        db.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.close()
+    
+    answer = retrieve_and_generate(request.quetions)
+
+    return {
+        "quetion": request.quetions,
+        "answer": answer
+    }
 
 
 

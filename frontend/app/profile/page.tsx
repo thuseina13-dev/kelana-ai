@@ -79,6 +79,9 @@ export default function ProfilePage() {
             <a href="/" className="hover:text-emerald-600 transition-colors font-semibold">
               Buat Rencana Baru
             </a>
+            <a href="/ask" className="hover:text-emerald-600 transition-colors font-semibold">
+              Tanya AI
+            </a>
             <a href="/trips" className="hover:text-emerald-600 transition-colors font-semibold">
               Riwayat Perjalanan
             </a>
