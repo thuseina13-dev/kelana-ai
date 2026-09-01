@@ -77,3 +77,30 @@ def get_bedrock_recommendation(days, destination, budget, category) -> str:
     ai_response = ai_request["output"]["message"]["content"][0]["text"]
     return ai_response
 
+def get_bedrock_answer(query: str) -> str:
+    client = get_bedrock_client()
+    prompt = textwrap.dedent(f"""
+        You are an experienced travel planner.
+        Answer the user's question. Only answer questions about travel. If the question is not related to travel, politely decline to answer.
+
+        Question: {query}
+        
+        Return ONLY the answer. Do NOT include intro or outro text.
+    """).strip()
+
+    ai_request = client.converse(
+        modelId=os.getenv("MODEL_ID"),
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
+    )
+    
+    ai_response = ai_request["output"]["message"]["content"][0]["text"]
+    return ai_response

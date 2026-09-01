@@ -1,3 +1,4 @@
+from services.bedrock_services import get_bedrock_answer
 from services.kb_service import retrieve_and_generate
 from services.kb_service import AskRequest
 from services.bedrock_services import get_bedrock_recommendation
@@ -258,6 +259,24 @@ def ask_kb(request: AskRequest, current_user: dict = Depends(get_current_user)):
         "answer": answer
     }
 
+@app.post('/api/v1/chat')
+def ask_ai(request: AskRequest, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        db.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.close()
+    
+    answer = get_bedrock_answer(request.quetions)
+
+    return {
+        "quetion": request.quetions,
+        "answer": answer
+    }
 
 
 
