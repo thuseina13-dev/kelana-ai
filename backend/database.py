@@ -15,6 +15,8 @@ def init_db() -> None:
     """Create All SQLAlchemy tables for the configured databases."""
     import models.user  # noqa: F401
     import models.trip  # noqa: F401
+    import models.conservation  # noqa: F401
+    import models.messages  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

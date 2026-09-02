@@ -77,29 +77,75 @@ def get_bedrock_recommendation(days, destination, budget, category) -> str:
     ai_response = ai_request["output"]["message"]["content"][0]["text"]
     return ai_response
 
-def get_bedrock_answer(query: str) -> str:
+def get_bedrock_answer(query_or_messages) -> str:
     client = get_bedrock_client()
-    prompt = textwrap.dedent(f"""
-        You are an experienced travel planner.
-        Answer the user's question. Only answer questions about travel. If the question is not related to travel, politely decline to answer.
+    
+    # System prompt / instructions
+    system_prompts = [
+        {
+            "text": (
+                "You are an experienced travel planner and assistant. "
+                "Answer the user's questions helpfully with rich travel recommendations. "
+                "Only answer questions related to travel, destinations, itineraries, culture, food, and logistics. "
+                "If the question is completely unrelated to travel, politely decline to answer. "
+                "Do NOT include redundant intro or outro filler."
+            )
+        }
+    ]
 
-        Question: {query}
-        
-        Return ONLY the answer. Do NOT include intro or outro text.
-    """).strip()
+    bedrock_messages = []
 
-    ai_request = client.converse(
-        modelId=os.getenv("MODEL_ID"),
-        messages=[
+    # If query_or_messages is a list of message dicts: [{"role": "user"|"assistant", "content": "..."}]
+    if isinstance(query_or_messages, list):
+        for msg in query_or_messages:
+            if isinstance(msg, dict):
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+            else:
+                role = getattr(msg, "role", "user")
+                content = getattr(msg, "content", "")
+
+            # Normalize role for Bedrock ('ai' -> 'assistant')
+            if role == "ai":
+                role = "assistant"
+            elif role not in ["user", "assistant"]:
+                role = "user"
+
+            if content:
+                bedrock_messages.append({
+                    "role": role,
+                    "content": [
+                        {
+                            "text": str(content)
+                        }
+                    ]
+                })
+    else:
+        # Fallback if single string query is passed
+        bedrock_messages = [
             {
                 "role": "user",
                 "content": [
                     {
-                        "text": prompt
+                        "text": str(query_or_messages)
                     }
                 ]
             }
         ]
+
+    # Ensure at least one message exists
+    if not bedrock_messages:
+        bedrock_messages = [
+            {
+                "role": "user",
+                "content": [{"text": "Hello"}]
+            }
+        ]
+
+    ai_request = client.converse(
+        modelId=os.getenv("MODEL_ID"),
+        system=system_prompts,
+        messages=bedrock_messages
     )
     
     ai_response = ai_request["output"]["message"]["content"][0]["text"]

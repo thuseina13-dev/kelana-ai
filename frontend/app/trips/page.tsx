@@ -142,6 +142,9 @@ export default function TripsHistoryPage() {
           </div>
 
           <div className="flex items-center space-x-4 text-xs sm:text-sm font-medium text-emerald-800">
+            <a href="/chat" className="hover:text-emerald-600 transition-colors font-semibold">
+              Chat AI
+            </a>
             <a href="/ask" className="hover:text-emerald-600 transition-colors font-semibold">
               Tanya AI
             </a>

@@ -5,9 +5,12 @@ from services.bedrock_services import get_bedrock_recommendation
 from database import init_db
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import joinedload
 from database import SessionLocal
 from models.trip import TripRequest, TripModel
 from models.user import UserModel, UserRequest, LoginRequest
+from models.conservation import ConservationModel, ConservationRequest
+from models.messages import MessageModel, MessageRequest, ChatRequestBody
 from services.trip_service import calculate_daily_budget
 from services.auth_services import register_new_user, authenticate_user, verify_token
 from fastapi.middleware.cors import CORSMiddleware
@@ -260,7 +263,7 @@ def ask_kb(request: AskRequest, current_user: dict = Depends(get_current_user)):
     }
 
 @app.post('/api/v1/chat')
-def ask_ai(request: AskRequest, current_user: dict = Depends(get_current_user)):
+def chat(request: ChatRequestBody, current_user: dict = Depends(get_current_user)):
     db = SessionLocal()
     user_id = int(current_user["sub"])
     
@@ -271,12 +274,160 @@ def ask_ai(request: AskRequest, current_user: dict = Depends(get_current_user)):
 
     db.close()
     
-    answer = get_bedrock_answer(request.quetions)
+    # If messages list provided (e.g. [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}]), pass it directly
+    if request.messages:
+        formatted_messages = [
+            {"role": m.role, "content": m.content}
+            for m in request.messages
+        ]
+        answer = get_bedrock_answer(formatted_messages)
+    else:
+        answer = get_bedrock_answer(request.quetions)
 
     return {
-        "quetion": request.quetions,
+        "quetion": request.quetions or (request.messages[-1].content if request.messages else ""),
         "answer": answer
     }
 
 
+@app.post('/api/v1/conservations')
+def create_conservation(request: ConservationRequest = None, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    title = request.title if request else None
+    
+    conservation = ConservationModel(user_id=user_id, title=title)
+    db.add(conservation)
+    db.commit()
+    db.refresh(conservation)
+    db.close()
+    
+    return {
+        "conservation_id": conservation.id,
+    }
 
+@app.get('/api/v1/conservations')
+def get_conservations(current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    conservations = db.query(ConservationModel).filter(ConservationModel.user_id == user_id).order_by(ConservationModel.id.desc()).all()
+    
+    result = [
+        {
+            "id": conv.id,
+            "user_id": conv.user_id,
+            "title": conv.title,
+            "createdAt": conv.createdAt
+        }
+        for conv in conservations
+    ]
+    
+    db.close()
+    return result
+
+@app.get('/api/v1/conservations/{id}')
+def get_conservation_by_id(id: int, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    conv = db.query(ConservationModel).filter(ConservationModel.id == id).first()
+    
+    if not conv:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Conservation with id {id} not found")
+        
+    if conv.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot view another user's conservation")
+        
+    result = {
+        "id": conv.id,
+        "user_id": conv.user_id,
+        "title": conv.title,
+        "createdAt": conv.createdAt,
+        "messages": [
+            {
+                "id": msg.id,
+                "conservation_id": msg.conservation_id,
+                "role": msg.role,
+                "content": msg.content,
+                "createdAt": msg.createdAt
+            }
+            for msg in conv.messages
+        ]
+    }
+    
+    db.close()
+    return result
+
+@app.post('/api/v1/conservations/{id}/messages')
+def create_message(id: int, request: MessageRequest, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    conservation = db.query(ConservationModel).filter(ConservationModel.id == id).first()
+    if not conservation:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Conservation with id {id} not found")
+        
+    if conservation.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot add messages to another user's conservation")
+        
+    message = MessageModel(
+        conservation_id=id,
+        role=request.role,
+        content=request.content
+    )
+    
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    db.close()
+    
+    return message
+
+@app.put('/api/v1/conservations/{id}')
+def update_conservation(id: int, request: ConservationRequest, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    conservation = db.query(ConservationModel).filter(ConservationModel.id == id).first()
+    if not conservation:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Conservation with id {id} not found")
+        
+    if conservation.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot modify another user's conservation")
+        
+    if request.title is not None:
+        conservation.title = request.title
+        
+    db.commit()
+    db.refresh(conservation)
+    db.close()
+    
+    return conservation
+
+@app.delete('/api/v1/conservations/{id}')
+def delete_conservation(id: int, current_user: dict = Depends(get_current_user)):
+    db = SessionLocal()
+    user_id = int(current_user["sub"])
+    
+    conservation = db.query(ConservationModel).filter(ConservationModel.id == id).first()
+    if not conservation:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Conservation with id {id} not found")
+        
+    if conservation.user_id != user_id:
+        db.close()
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot delete another user's conservation")
+        
+    db.delete(conservation)
+    db.commit()
+    db.close()
+    
+    return conservation

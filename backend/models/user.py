@@ -14,7 +14,8 @@ class UserModel(Base):
     password_bash =     Column(String,      nullable=False)
     createdAt =         Column(DateTime(timezone=True), server_default= func.now(), nullable=False)
 
-    trips = relationship('TripModel', back_populates="user")
+    trips =             relationship('TripModel', back_populates="user")
+    conservations =     relationship('ConservationModel', back_populates="user")
 
 class UserRequest(BaseModel):
     name: str
