@@ -33,13 +33,32 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Helper format timestamp pesan
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
   };
 
+  // Auto-scroll to bottom of messages
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Auto-scroll saat pesan berubah atau percakapan dibuka atau status loading berubah
   useEffect(() => {
-    scrollToBottom();
+    if (activeConservationId) {
+      // Menggunakan timeout kecil agar DOM selesai dirender sebelum scrolling
+      const timer = setTimeout(() => {
+        scrollToBottom('smooth');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [messages, activeConservationId, loading]);
 
   // Fetch conservations on mount
@@ -238,6 +257,11 @@ export default function ChatPage() {
 
   const activeConservation = conservations.find((c) => c.id === activeConservationId);
   const activeMessages = activeConservationId ? messages[activeConservationId] || [] : [];
+  const currentTitle = activeConservation
+    ? activeConservation.title && activeConservation.title.trim() !== ''
+      ? activeConservation.title
+      : `Percakapan #${activeConservation.id}`
+    : 'Pilih Percakapan';
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -395,30 +419,33 @@ export default function ChatPage() {
 
       {/* Jendela Percakapan Sebelah Kanan */}
       <main className="flex-1 flex flex-col bg-slate-950">
-        {/* Header Chat */}
+        {/* 1. Header Chat dengan Conversation Title */}
         <header className="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between bg-slate-900/50 backdrop-blur-md">
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
-            <h1 className="font-semibold text-slate-200">
-              {activeConservation
-                ? activeConservation.title && activeConservation.title.trim() !== ''
-                  ? activeConservation.title
-                  : `Percakapan #${activeConservation.id}`
-                : 'Pilih Percakapan'}
-            </h1>
+          <div className="flex items-center space-x-3 min-w-0 pr-4">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            <div className="min-w-0">
+              <h1 className="font-semibold text-slate-100 text-base truncate" title={currentTitle}>
+                {currentTitle}
+              </h1>
+              {activeConservation && (
+                <p className="text-xs text-slate-400 truncate">
+                  {activeMessages.length} pesan
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Navigasi Tambahan Kembali ke Beranda */}
           <Link
             href="/"
-            className="flex items-center space-x-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 transition-all border border-slate-800"
+            className="flex items-center space-x-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 transition-all border border-slate-800 shrink-0"
           >
             <span>🏠</span>
             <span className="hidden sm:inline">Halaman Utama</span>
           </Link>
         </header>
 
-        {/* Area Pesan Chat */}
+        {/* 2. Area Pesan Chat & Auto-scroll */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {!activeConservationId ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-500">
@@ -434,6 +461,8 @@ export default function ChatPage() {
           ) : (
             activeMessages.map((msg, index) => {
               const isUser = msg.role === 'user';
+              const timeString = formatTime(msg.createdAt);
+
               return (
                 <div
                   key={index}
@@ -441,36 +470,53 @@ export default function ChatPage() {
                 >
                   {/* Avatar */}
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 font-bold ${isUser ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-emerald-400 border border-emerald-500/30'
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 font-bold ${isUser ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30' : 'bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-md'
                       }`}
                   >
                     {isUser ? 'U' : 'AI'}
                   </div>
 
-                  {/* Bubble Pesan */}
-                  <div
-                    className={`max-w-xl rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg ${isUser
-                      ? 'bg-emerald-600 text-white rounded-tr-none'
-                      : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
-                      }`}
-                  >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {/* Bubble Pesan & 4. Timestamp for each message */}
+                  <div className={`flex flex-col max-w-xl ${isUser ? 'items-end' : 'items-start'}`}>
+                    <div
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg ${isUser
+                        ? 'bg-emerald-600 text-white rounded-tr-none'
+                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
+                        }`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+
+                    {/* Timestamp */}
+                    {timeString && (
+                      <span className={`text-[11px] text-slate-400 mt-1 px-1 flex items-center gap-1 ${isUser ? 'text-right' : 'text-left'}`}>
+                        <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {timeString}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
             })
           )}
 
-          {/* Indicator AI Typing */}
+          {/* 3. Typing indicator (Animasi + Teks status saat AI sedang berpikir/memproses) */}
           {loading && (
             <div className="flex items-start space-x-3">
-              <div className="w-9 h-9 rounded-full bg-slate-800 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-sm font-bold shrink-0">
+              <div className="w-9 h-9 rounded-full bg-slate-800 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-sm font-bold shrink-0 shadow-md">
                 AI
               </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl rounded-tl-none px-4 py-3 text-slate-400 text-sm flex items-center space-x-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" />
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.2s]" />
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.4s]" />
+              <div className="flex flex-col items-start">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl rounded-tl-none px-4 py-3 text-slate-300 text-sm flex items-center space-x-3 shadow-lg">
+                  <div className="flex space-x-1.5 items-center">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                  <span className="text-xs text-emerald-400/90 font-medium">Kelana AI sedang mengetik...</span>
+                </div>
               </div>
             </div>
           )}
