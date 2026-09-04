@@ -241,14 +241,14 @@ export const SectionCard: React.FC<{ section: SectionData }> = ({ section }) => 
         <div className="p-5 sm:p-6 text-slate-700 text-sm leading-relaxed space-y-2 bg-gradient-to-b from-white to-emerald-50/20">
           <ReactMarkdown
             components={{
-              h3: ({ node, ...props }) => (
+              h3: ({ ...props }) => (
                 <h3 className="text-base font-bold text-emerald-950 mt-3 mb-1.5 pb-1 border-b border-emerald-100" {...props} />
               ),
-              strong: ({ node, ...props }) => <strong className="font-semibold text-emerald-950" {...props} />,
-              ul: ({ node, ...props }) => <ul className="list-disc list-inside space-y-2 my-2.5 pl-1 text-slate-700" {...props} />,
-              li: ({ node, ...props }) => <li className="text-slate-700 leading-relaxed pl-1" {...props} />,
-              p: ({ node, ...props }) => <p className="my-1.5 text-slate-700 leading-relaxed" {...props} />,
-              blockquote: ({ node, ...props }) => (
+              strong: ({ ...props }) => <strong className="font-semibold text-emerald-950" {...props} />,
+              ul: ({ ...props }) => <ul className="list-disc list-inside space-y-2 my-2.5 pl-1 text-slate-700" {...props} />,
+              li: ({ ...props }) => <li className="text-slate-700 leading-relaxed pl-1" {...props} />,
+              p: ({ ...props }) => <p className="my-1.5 text-slate-700 leading-relaxed" {...props} />,
+              blockquote: ({ ...props }) => (
                 <blockquote className="p-3.5 bg-emerald-50/90 border-l-4 border-emerald-500 rounded-r-xl text-emerald-900 text-xs my-3 font-medium shadow-2xs" {...props} />
               ),
             }}

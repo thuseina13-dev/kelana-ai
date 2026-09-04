@@ -174,7 +174,7 @@ export const sendChatMessage = async (
   prompt: string | ChatHistoryMessage[]
 ): Promise<ChatResponse> => {
   try {
-    let bodyPayload: any = {};
+    let bodyPayload: Record<string, unknown> = {};
     if (Array.isArray(prompt)) {
       const sanitizedMessages = prompt
         .slice(-10) // Batasi maksimal 10 chat terakhir

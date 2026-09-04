@@ -59,7 +59,7 @@ export interface RegisterPayload {
   password: string;
 }
 
-export const register = async (payload: RegisterPayload): Promise<any> => {
+export const register = async (payload: RegisterPayload): Promise<LoginResponse> => {
   try {
     const response = await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
       method: 'POST',

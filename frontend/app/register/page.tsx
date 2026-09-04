@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { register } from '../../services/authService';
+import Logo from '../../componets/Logo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -63,10 +64,8 @@ export default function RegisterPage() {
         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col items-center mb-8 relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 mb-4 animate-pulse">
-            <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
+          <div className="mb-4">
+            <Logo size={64} />
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Daftar Akun</h1>
           <p className="text-emerald-200/80 text-sm mt-2 font-medium">Buat akun KelanaAI baru Anda</p>

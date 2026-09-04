@@ -15,10 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kelana AI - Perencana Liburan Impian Berbasis AI",
   description: "Rencanakan liburan impianmu dengan rekomendasi terstruktur buatan AI",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"

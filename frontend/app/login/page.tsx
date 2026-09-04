@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '../../services/authService';
+import Logo from '../../componets/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,10 +59,8 @@ export default function LoginPage() {
         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col items-center mb-8 relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 mb-4 animate-pulse">
-            <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+          <div className="mb-4">
+            <Logo size={64} />
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Kelana<span className="text-emerald-400">AI</span></h1>
           <p className="text-emerald-200/80 text-sm mt-2 font-medium">Perencana Liburan Cerdas & Kustom</p>

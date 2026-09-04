@@ -14,8 +14,7 @@ import {
   updateConservation,
   sendChatMessage,
 } from '@/services/conservationService';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000';
+import Logo from '@/componets/Logo';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -270,9 +269,9 @@ export default function ChatPage() {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Header Sidebar dengan Link ke Halaman Utama */}
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2 text-emerald-400 font-bold text-lg hover:opacity-90 transition-opacity">
-              <span className="text-2xl">🌴</span>
-              <span>Kelana AI Chat</span>
+            <Link href="/" className="flex items-center space-x-2.5 text-white font-bold text-base hover:opacity-90 transition-opacity">
+              <Logo size={30} />
+              <span className="font-extrabold tracking-tight">Kelana<span className="text-emerald-400">AI</span> <span className="text-xs font-semibold text-emerald-400/90 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/40">Chat</span></span>
             </Link>
             <Link
               href="/"

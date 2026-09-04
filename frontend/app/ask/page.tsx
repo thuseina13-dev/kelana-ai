@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { askKnowledgeBase } from '../../services/kbService';
+import Header from '../../componets/Header';
+import Footer from '../../componets/Footer';
 
 export default function AskPage() {
   const router = useRouter();
@@ -21,11 +23,6 @@ export default function AskPage() {
       setIsCheckingAuth(false);
     }
   }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
 
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,44 +70,7 @@ export default function AskPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
       {/* 1. TOP NAVBAR */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-emerald-100/80 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => router.push('/')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h1.5a2.5 2.5 0 002.5-2.5V11a2 2-0 012-2h1.055M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight text-emerald-950">Kelana<span className="text-emerald-600">AI</span></span>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4 text-xs sm:text-sm font-medium text-emerald-800">
-            <a href="/chat" className="hover:text-emerald-600 transition-colors font-semibold">
-              Chat AI
-            </a>
-            <a href="/" className="hover:text-emerald-600 transition-colors font-semibold">
-              Buat Rencana Baru
-            </a>
-            <a href="/trips" className="hover:text-emerald-600 transition-colors font-semibold">
-              Riwayat Perjalanan
-            </a>
-            <a href="/profile" className="hover:text-emerald-600 transition-colors font-semibold">
-              Profil Saya
-            </a>
-            <button
-              onClick={handleLogout}
-              title="logout"
-              className="hover:text-rose-600 transition-colors cursor-pointer border-0 bg-transparent p-1.5 rounded-lg hover:bg-rose-50 flex items-center justify-center text-emerald-800"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* 2. PAGE HEADER */}
       <section className="bg-emerald-950 text-white py-10 shadow-inner relative overflow-hidden">
@@ -272,11 +232,7 @@ export default function AskPage() {
       </main>
 
       {/* 4. FOOTER */}
-      <footer className="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs">
-          <p>&copy; {new Date().getFullYear()} KelanaAI. Seluruh Hak Cipta Dilindungi.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
